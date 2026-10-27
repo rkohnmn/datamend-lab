@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DataMend Lab — Clean the Data. Preserve the Meaning. | DataSense Studio</title>
+  <meta name="description" content="An intelligent, privacy-conscious data preparation laboratory for diagnosing, cleaning, restructuring, validating, and exporting trustworthy datasets.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230F6E56'/%3E%3Cpath d='M8 9h16M8 16h16M8 23h10' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='23' cy='22' r='3' fill='%2334D399'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./css/tokens.css">
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/components.css">
+  <link rel="stylesheet" href="./css/print.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Instrument Bar -->
+    <header class="instrument-bar" role="banner">
+      <div class="instrument-bar-top">
+        <div class="brand-cluster">
+          <div class="brand-title">
+            <span id="app-brand-name">DataMend Lab</span>
+            <span class="brand-badge">v1.0.0</span>
+          </div>
+          <span class="brand-tagline">Clean the data. Preserve the meaning. — DataSense Studio</span>
+        </div>
+
+        <div class="instrument-controls" role="toolbar" aria-label="Global workspace controls">
+          <label for="active-dataset-select" class="sr-only">Active Dataset</label>
+          <select id="active-dataset-select" class="select select-sm" aria-label="Select active dataset"></select>
+
+          <label for="preset-loader-select" class="sr-only">Load Synthetic Example Dataset</label>
+          <select id="preset-loader-select" class="select select-sm" aria-label="Load synthetic example dataset">
+            <option value="">+ Load Example Dataset…</option>
+          </select>
+
+          <!-- Explanation Level Mode Switcher (Part 3.6) -->
+          <div class="segmented-control" role="group" aria-label="Explanation depth level">
+            <button type="button" class="seg-btn" data-exp-mode="simple" id="btn-mode-simple" title="Plain-language explanations and safe defaults">Simple</button>
+            <button type="button" class="seg-btn active" data-exp-mode="standard" id="btn-mode-standard" title="Detailed data-preparation terminology and methodological reasoning">Standard</button>
+            <button type="button" class="seg-btn" data-exp-mode="technical" id="btn-mode-technical" title="Data types, matching algorithms, relational algebra, and reproducibility contracts">Technical</button>
+          </div>
+
+          <button type="button" class="btn btn-sm" id="btn-undo" disabled title="Undo last operation (Ctrl+Z)">Undo <span id="undo-count" class="badge badge-neutral">0</span></button>
+          <button type="button" class="btn btn-sm" id="btn-redo" disabled title="Redo operation (Ctrl+Y)">Redo</button>
+          <button type="button" class="btn btn-sm btn-warning" id="btn-restore-original" title="Restore original imported dataset snapshot">Restore Original</button>
+          <button type="button" class="btn btn-sm" id="btn-theme-toggle" title="Toggle Light Archival / Dark Instrument mode">Theme</button>
+        </div>
+      </div>
+
+      <!-- 11-Destination Navigation Ribbon (Part 5) -->
+      <nav class="nav-ribbon" role="navigation" aria-label="Primary application workspaces">
+        <button type="button" class="nav-tab active" data-view="home" id="tab-home">1. Home &amp; Import</button>
+        <button type="button" class="nav-tab" data-view="inspector" id="tab-inspector">2. Data Inspector <span class="tab-count" id="badge-rows-cols">0×0</span></button>
+        <button type="button" class="nav-tab" data-view="audit" id="tab-audit">3. Quality Audit <span class="tab-count" id="badge-issue-count">0</span></button>
+        <button type="button" class="nav-tab" data-view="cleaning" id="tab-cleaning">4. Cleaning Studio</button>
+        <button type="button" class="nav-tab" data-view="restructure" id="tab-restructure">5. Restructure &amp; Joins</button>
+        <button type="button" class="nav-tab" data-view="recipes" id="tab-recipes">6. Recipe Builder <span class="tab-count" id="badge-step-count">0</span></button>
+        <button type="button" class="nav-tab" data-view="validation" id="tab-validation">7. Validation Studio <span class="tab-count" id="badge-rule-count">0</span></button>
+        <button type="button" class="nav-tab" data-view="comparison" id="tab-comparison">8. Before &amp; After</button>
+        <button type="button" class="nav-tab" data-view="export" id="tab-export">9. Export &amp; Reproduce</button>
+        <button type="button" class="nav-tab" data-view="atlas" id="tab-atlas">10. Knowledge Atlas &amp; Labs</button>
+        <button type="button" class="nav-tab" data-view="methods" id="tab-methods">11. Methods &amp; About</button>
+      </nav>
+    </header>
+
+    <!-- Main Dynamic Workspace Container -->
+    <main class="workspace-container" id="main-workspace" role="main" aria-live="polite">
+      <!-- Populated dynamically by js/app.js -->
+    </main>
+
+    <!-- Preview & Approval Modal Dialog (Part 10.3) -->
+    <div class="modal-backdrop" id="preview-modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="preview-modal-title">
+      <div class="modal-dialog">
+        <div class="module-header">
+          <div class="module-title" id="preview-modal-title">Transformation Impact Preview</div>
+          <button type="button" class="btn btn-sm" id="btn-close-preview-modal">Close</button>
+        </div>
+        <div class="modal-body" id="preview-modal-body"></div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container" role="status" aria-live="polite"></div>
+  </div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

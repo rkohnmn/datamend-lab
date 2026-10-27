@@ -1,0 +1,11 @@
+{
+  "name": "datamend-lab",
+  "version": "1.0.0",
+  "description": "DataMend Lab — Intelligent, privacy-conscious browser-based data preparation, cleaning, restructuring, and validation laboratory in the DataSense Studio ecosystem.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "verify": "python3 tests/verify-build.py"
+  },
+  "license": "MIT"
+}
