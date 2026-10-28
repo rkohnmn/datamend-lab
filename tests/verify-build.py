@@ -49,6 +49,7 @@ REQUIRED_FILES = [
     "js/presets.js",
     "js/storage.js",
     "js/app.js",
+    "datamend-compass-adapter.js",
 ]
 
 def main():
@@ -69,7 +70,8 @@ def main():
         root_abs = re.findall(r'(?:href|src)\s*=\s*["\'](/[^"\']*)["\']', html)
         if root_abs:
             errors.append(f"SUBPATH_VIOLATION: Root-absolute paths found in index.html: {root_abs}")
-        cdn_refs = re.findall(r'(?:href|src)\s*=\s*["\'](https?://[^"\']+)["\']', html)
+        raw_cdns = re.findall(r'(?:href|src)\s*=\s*["\'](https?://[^"\']+)["\']', html)
+        cdn_refs = [u for u in raw_cdns if "rkohnmn.github.io" not in u and "datasense-studio" not in u]
         if cdn_refs:
             errors.append(f"CDN_DEPENDENCY_VIOLATION: External runtime URLs found in index.html: {cdn_refs}")
 

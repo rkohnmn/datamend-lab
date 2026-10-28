@@ -1,8 +1,13 @@
 # DataMend Lab
 
+[![Live Application](https://img.shields.io/badge/Live%20Application-rkohnmn.github.io%2Fdatamend--lab-0F6E56?style=flat-square)](https://rkohnmn.github.io/datamend-lab/)
+[![DataSense Studio Hub](https://img.shields.io/badge/Ecosystem%20Hub-DataSense%20Studio-0D1014?style=flat-square)](https://rkohnmn.github.io/datasense-studio/)
+[![DataSense Compass](https://img.shields.io/badge/DataSense-Compass%20Engine-D9381E?style=flat-square)](https://rkohnmn.github.io/datasense-studio/compass/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+
 **Clean the data. Preserve the meaning.**
 
-DataMend Lab is a 100% client-side, zero-dependency, browser-based data inspection, diagnosis, cleaning, restructuring, validation, and reproducible preparation laboratory in the **DataSense Studio** statistical software ecosystem (alongside QuartetLab, VisualGrammar, ResampleLab, and ForecastLab).
+DataMend Lab is a 100% client-side, zero-dependency, browser-based data inspection, diagnosis, cleaning, restructuring, validation, and reproducible preparation laboratory in the **[DataSense Studio](https://rkohnmn.github.io/datasense-studio/)** statistical software ecosystem (alongside [DataSense Compass](https://rkohnmn.github.io/datasense-studio/compass/), [VisualGrammar](https://rkohnmn.github.io/visualgrammar/), [QuartetLab](https://rkohnmn.github.io/quartetlab/), [ResampleLab](https://rkohnmn.github.io/resamplelab/), and [ForecastLab](https://rkohnmn.github.io/forecastlab/)).
 
 ---
 
@@ -18,7 +23,16 @@ Data preparation is not blindly deleting missing values or stripping outliers. D
 
 ---
 
-## 2. Eleven Integrated Application Workspaces
+## 2. DataSense Compass × DataMend Lab Round-Trip Protocol
+
+DataMend Lab includes `datamend-compass-adapter.js` implementing the `datasense_compass_handoff_v1` protocol:
+1. When launched from [DataSense Compass](https://rkohnmn.github.io/datasense-studio/compass/) with `?compass_handoff=<id>&return_to=<url>`, DataMend Lab automatically receives the staged dataset from IndexedDB / localStorage.
+2. An active status banner is displayed with the staged row count and identified target variable.
+3. Once the analyst completes cleaning operations, clicking **"✓ Return Cleaned Dataset to DataSense Compass"** transfers the repaired dataset and audit log back to DataSense Compass with restored variable roles and green quality gates.
+
+---
+
+## 3. Eleven Integrated Application Workspaces
 
 1. **Home & Import (`1. Home & Import`)**: Drag-and-drop multi-file uploader (CSV, TSV, multi-sheet XLSX, JSON, NDJSON, DataSense JSON), manual data entry, parser override preview, and 8 synthetic scenario datasets.
 2. **Data Inspector (`2. Data Inspector`)**: Variable semantic type/role/unit configuration, two-pass descriptive statistics ($\bar{x}, s$, Hyndman-Fan Type 7 $Q_1, \tilde{x}, Q_3, IQR, MAD_\sigma$), missingness matrix, and relationship hypotheses.
@@ -34,7 +48,7 @@ Data preparation is not blindly deleting missing values or stripping outliers. D
 
 ---
 
-## 3. Quick Start & Local Development
+## 4. Quick Start & Local Development
 
 DataMend Lab requires **zero runtime npm dependencies** and **no backend server**.
 
@@ -52,7 +66,7 @@ python3 -m http.server 8080
 
 ---
 
-## 4. Documentation Index
+## 5. Documentation Index
 
 Detailed architectural and methodology specifications are documented across the repository:
 
@@ -75,13 +89,13 @@ Detailed architectural and methodology specifications are documented across the 
 
 ---
 
-## 5. GitHub Pages Deployment
+## 6. GitHub Pages Deployment
 
-All asset links in `index.html` use explicit relative paths (`./css/...`, `./js/...`) so the application deploys cleanly under any repository subpath (`https://<username>.github.io/<repo-name>/`) via `.github/workflows/ci.yml`.
+All asset links in `index.html` use explicit relative paths (`./css/...`, `./js/...`, `./datamend-compass-adapter.js`) so the application deploys cleanly under any repository subpath (`https://rkohnmn.github.io/datamend-lab/`) via `.github/workflows/ci.yml`.
 
 ---
 
-## 6. License
+## 7. License
 
 MIT License. Designed and maintained as part of the **DataSense Studio** open-source statistical laboratory ecosystem.
-
+Copyright © 2026 [Robert Kohn (rkohnmn)](https://github.com/rkohnmn).
