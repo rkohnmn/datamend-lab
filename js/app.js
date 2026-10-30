@@ -1,3 +1,5 @@
+import { assertInputSize } from './import-safety.js';
+let importGeneration = 0;
 /**
  * DataMend Lab — Main Application Controller & 11-Workspace Interactive UI
  * Coordinates state, multi-dataset project memory, import previews, profiling,
@@ -170,6 +172,7 @@ function getActiveDataset() {
 }
 
 function loadPresetDataset(presetId, switchToView = null) {
+  ++importGeneration; reportImport();
   const preset = SYNTHETIC_PRESETS.find(p => p.id === presetId) || SYNTHETIC_PRESETS[0];
   if (!preset) return null;
 
@@ -600,6 +603,7 @@ function renderHomeWorkspace(ds, profile, issues) {
               <button type="button" class="btn btn-sm" data-goto-view="atlas">Knowledge Atlas</button>
             </div>
 
+            <p class="import-guidance">Local import · Up to 2 MB, 5,000 rows, 40 columns, and 100,000 cells. For larger datasets, choose a subset.</p>
             <div class="dropzone" id="file-dropzone" tabindex="0" role="button" aria-label="Upload CSV, TSV, XLSX, JSON, or NDJSON dataset file" style="padding:14px;">
               <div style="font-weight:600; font-size:14px; margin-bottom:4px;">
                 Drop CSV, TSV, Excel (.xlsx), JSON, NDJSON, or DataSense JSON files here
@@ -607,7 +611,7 @@ function renderHomeWorkspace(ds, profile, issues) {
               <div style="font-size:12px; color:var(--color-text-muted); margin-bottom:8px;">
                 Preserves raw values, leading-zero identifiers, multi-sheet workbooks, and transformation lineage.
               </div>
-              <input type="file" id="file-upload-input" accept=".csv,.tsv,.txt,.xlsx,.json,.ndjson" multiple style="display:none;">
+              <input type="file" id="file-upload-input" accept=".csv,.tsv,.txt,.xlsx,.json,.ndjson" style="display:none;">
               <button type="button" class="btn btn-sm btn-primary" id="btn-trigger-file-input">Browse Local Files</button>
               <button type="button" class="btn btn-sm" id="btn-paste-manual-data">Paste / Enter Manual Text</button>
             </div>
@@ -844,7 +848,7 @@ function renderAuditWorkspace(ds, profile, issues) {
             <details class="disclosure">
               <summary>View Exact Scorecard Mathematical Formulas</summary>
               <div class="disclosure-body">
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:6px; font-size:12px;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap:6px; font-size:12px;">
                   ${scorecard.dimensions.map(dim => `<div><strong>${escapeHtml(dim.name)}:</strong> <code>${escapeHtml(dim.formula)}</code></div>`).join('')}
                 </div>
               </div>
@@ -914,7 +918,7 @@ function renderCleaningStudioWorkspace(ds, profile, issues) {
     <div class="module-card">
       <div class="module-body compact" style="display:flex; flex-wrap:wrap; align-items:center; gap:8px;">
         <strong style="font-size:12px;">Command Assistant:</strong>
-        <input type="text" id="nl-command-input" class="input input-sm" style="flex:1; min-width:220px;" placeholder="e.g. &quot;Trim spaces from state&quot;, &quot;Remove exact duplicate records&quot;" value="${escapeHtml(APP_STATE.nlCommandInput)}">
+        <input type="text" id="nl-command-input" class="input input-sm" style="flex:1; min-width:0; flex-basis:220px;" placeholder="e.g. &quot;Trim spaces from state&quot;, &quot;Remove exact duplicate records&quot;" value="${escapeHtml(APP_STATE.nlCommandInput)}">
         <button type="button" class="btn btn-sm btn-primary" id="btn-parse-nl">Propose Operation</button>
         <div class="segmented-control" role="group" aria-label="Automation policy mode">
           <button type="button" class="seg-btn ${APP_STATE.cleaningMode === 'inspect' ? 'active' : ''}" data-clean-mode="inspect">Inspect Only</button>
@@ -1909,7 +1913,7 @@ function renderAtlasWorkspace() {
             <span class="badge badge-primary">Click Any Lab to Expand or Launch</span>
           </div>
           <div class="module-body compact">
-            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(360px, 1fr)); gap:8px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap:8px;">
               ${GUIDED_INVESTIGATIONS.map((inv, idx) => `
                 <details class="disclosure" ${idx < 2 ? 'open' : ''} style="margin-bottom:0;">
                   <summary>
@@ -1953,7 +1957,7 @@ function renderAtlasWorkspace() {
                   <span class="badge badge-low">${escapeHtml(entry.capabilityStatus)}</span>
                 </summary>
                 <div class="disclosure-body">
-                  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:8px; font-size:12px;">
+                  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap:8px; font-size:12px;">
                     <div><strong>1. Definition:</strong> ${formatMathHtml(entry.definition)}</div>
                     <div><strong>2. Plain Explanation:</strong> ${formatMathHtml(entry.plainExplanation)}</div>
                     <div><strong>3. Why It Matters:</strong> ${formatMathHtml(entry.whyItMatters)}</div>
@@ -2203,8 +2207,9 @@ function bindWorkspaceEvents(ds, profile, issues) {
     if (panel) panel.hidden = true;
   });
   document.getElementById('btn-parse-manual')?.addEventListener('click', () => {
+    ++importGeneration; reportImport();
     const text = document.getElementById('manual-csv-textarea')?.value || '';
-    if (!text.trim()) { showToast('Enter CSV or JSON data first.', 'warning'); return; }
+    if (!text.trim()) { reportImport('Enter CSV or JSON data first.'); return; }
     try {
       if (text.trim().startsWith('[') || text.trim().startsWith('{')) {
         const jRes = parseJsonContent(text);
@@ -2235,29 +2240,32 @@ function bindWorkspaceEvents(ds, profile, issues) {
       }
       renderApp();
     } catch (err) {
-      showToast(`Parse Error: ${err.message}`, 'error');
+      reportImport(`Parse error: ${err.message}`);
     }
   });
 
   document.getElementById('imp-delim')?.addEventListener('change', e => {
     const p = APP_STATE.pendingImportPreview;
     if (!p || !p.rawText) return;
-    const cRes = parseDelimitedText(p.rawText, { delimiter: e.target.value, hasHeader: p.hasHeader });
-    p.delimiter = e.target.value;
-    p.columnNames = cRes.columnNames;
-    p.rawRows = cRes.rawRows;
-    p.warnings = cRes.warnings;
+    try {
+      const result = parseDelimitedText(p.rawText, {delimiter:e.target.value, hasHeader:p.hasHeader});
+      Object.assign(p, {delimiter:e.target.value, columnNames:result.columnNames, rawRows:result.rawRows, warnings:result.warnings});
+      reportImport();
+    } catch (error) { reportImport(error.message); }
     renderApp();
   });
   document.getElementById('imp-header')?.addEventListener('change', e => {
     const p = APP_STATE.pendingImportPreview;
     if (!p) return;
-    p.hasHeader = e.target.checked;
-    if (p.rawText) {
-      const cRes = parseDelimitedText(p.rawText, { delimiter: p.delimiter, hasHeader: p.hasHeader });
-      p.columnNames = cRes.columnNames;
-      p.rawRows = cRes.rawRows;
-    }
+    try {
+      const hasHeader = e.target.checked;
+      if (p.rawText) {
+        const result = parseDelimitedText(p.rawText, {delimiter:p.delimiter, hasHeader});
+        Object.assign(p, {columnNames:result.columnNames, rawRows:result.rawRows, warnings:result.warnings});
+      }
+      p.hasHeader = hasHeader;
+      reportImport();
+    } catch (error) { reportImport(error.message); }
     renderApp();
   });
   document.getElementById('imp-sheet')?.addEventListener('change', e => {
@@ -2277,6 +2285,8 @@ function bindWorkspaceEvents(ds, profile, issues) {
   document.getElementById('btn-commit-import')?.addEventListener('click', () => {
     const p = APP_STATE.pendingImportPreview;
     if (!p) return;
+    if (!p.rawRows.length || !p.columnNames.length) { reportImport('Add column headers and at least one data row before committing.'); return; }
+    reportImport();
     const decSep = document.getElementById('imp-decimal')?.value || '.';
     const sheetName = p.sheets ? p.sheets[p.selectedSheetIdx || 0]?.name : null;
     const newDs = buildDatasetFromParsed({
@@ -2842,14 +2852,28 @@ function collectStudioOperationParams(opId, col) {
   }
 }
 
+function reportImport(message = '', state = 'error') {
+  const el = document.getElementById('import-feedback');
+  if (el) { el.textContent = message; el.dataset.state = state; }
+}
 function handleFilesSelected(fileList) {
+  const generation = ++importGeneration;
   const file = fileList[0];
   if (!file) return;
+  if (fileList.length > 1) {
+    showToast('Import one file at a time so each dataset can be reviewed before loading.', 'error');
+    return;
+  }
+  try { assertInputSize(file.size); } catch (error) { reportImport(error.message); return; }
+  reportImport(`Reading ${file.name} locally…`, 'loading');
   const ext = file.name.split('.').pop().toLowerCase();
+  if (!['csv','tsv','txt','xlsx','json','ndjson'].includes(ext)) { reportImport('Choose a CSV, TSV, TXT, XLSX, JSON, or NDJSON file.'); return; }
 
   if (ext === 'xlsx') {
     const reader = new FileReader();
+    reader.onerror = () => { if (generation === importGeneration) reportImport('The file could not be read. Select it again or paste its contents.'); };
     reader.onload = e => {
+      if (generation !== importGeneration) return;
       try {
         const bytes = new Uint8Array(e.target.result);
         const wb = parseXlsxWorkbook(bytes);
@@ -2864,15 +2888,18 @@ function handleFilesSelected(fileList) {
           rawRows: wb.sheets[0].rawRows,
           warnings: wb.sheets[0].warnings
         };
+        reportImport('Preview ready. Review the columns before committing this dataset.', 'success');
         renderApp();
       } catch (err) {
-        showToast(`XLSX Import Error: ${err.message}`, 'error');
+        reportImport(`XLSX import error: ${err.message}`);
       }
     };
     reader.readAsArrayBuffer(file);
   } else {
     const reader = new FileReader();
+    reader.onerror = () => { if (generation === importGeneration) reportImport('The file could not be read. Select it again or paste its contents.'); };
     reader.onload = e => {
+      if (generation !== importGeneration) return;
       try {
         const text = String(e.target.result || '');
         if (ext === 'json' || ext === 'ndjson') {
@@ -2903,9 +2930,10 @@ function handleFilesSelected(fileList) {
             warnings: cRes.warnings
           };
         }
+        reportImport('Preview ready. Review the columns before committing this dataset.', 'success');
         renderApp();
       } catch (err) {
-        showToast(`File Import Error: ${err.message}`, 'error');
+        reportImport(`File import error: ${err.message}`);
       }
     };
     reader.readAsText(file);

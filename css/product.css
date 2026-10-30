@@ -1,0 +1,65 @@
+/* Product ergonomics: preserve the analytical palette and give controls room. */
+@media screen {
+  .module-card, .card, .panel, .control-group, .form-group,
+  .studio-grid > *, .studio-bento-grid > *, .bento-grid-3 > *,
+  .bento-2col > *, .bento-equal > *, .two-col-grid > * {
+    min-width: 0;
+  }
+  select, textarea, input { max-width: 100%; }
+  select { min-width: 0; text-overflow: ellipsis; }
+  .brand-cluster, .brand-block { flex-wrap: wrap; min-width: 0; }
+  .brand-title { font-size: clamp(28px, 2.4vw, 34px); line-height: 1.15; }
+  .brand-tagline, .brand-subtitle { font-size: 13px; line-height: 1.5; }
+  .instrument-bar, .instrument-header { box-shadow: none; }
+  .instrument-bar-top, .header-top-row { row-gap: 16px; }
+  .instrument-controls, .toolbar-controls, .header-controls, .header-actions {
+    min-width: 0; max-width: 100%; gap: 8px;
+  }
+  .module-header, .card-header { flex-wrap: wrap; }
+  .module-title, .card-title, .panel-title { overflow-wrap: anywhere; }
+  .btn { min-height: 36px; line-height: 1.35; }
+  .nav-tab, .nav-tab-btn { min-height: 40px; }
+  .control-select, .control-input, .select, .input, .input-field,
+  .form-select, .form-input { min-height: 36px; }
+  .import-error { color: var(--color-error); font-size: 14px; margin-top: 12px; }
+  .import-error:empty { display: none; }
+}
+@media screen and (max-width: 800px) {
+  /* A tall sticky header must not obscure a phone's working area. */
+  .instrument-bar, .instrument-header { position: static; }
+  .brand-cluster, .brand-block { gap: 8px; }
+  .brand-tagline { flex-basis: 100%; }
+  .nav-ribbon, .workspace-nav, .primary-nav {
+    flex-wrap: nowrap; overflow-x: auto; max-width: 100%;
+    padding-bottom: 6px; scrollbar-width: thin;
+  }
+  .nav-tab, .nav-tab-btn { flex: 0 0 auto; white-space: nowrap; }
+  .instrument-controls, .toolbar-controls { width: 100%; }
+  .instrument-controls > select, .toolbar-controls > select { width: 100%; }
+  .btn { white-space: normal; max-width: 100%; }
+  .module-header > *, .card-header > * { min-width: 0; max-width: 100%; }
+  .segmented-control { flex-wrap: wrap; }
+}
+@media screen and (max-width: 480px) {
+  .btn, .nav-tab, .nav-tab-btn, .seg-btn, .segmented-btn { min-height: 44px; }
+  .control-select, .control-input, .control-textarea, .select, .input,
+  .input-field, .form-select, .form-input, textarea { font-size: 16px; }
+  .module-card, .card, .panel { border-radius: 8px; }
+}
+
+@media screen {
+  .instrument-controls > select { max-width: min(100%, 440px); }
+  .bento-grid-12 > *, .bento-grid-3 > * { min-width: 0; }
+  .module-title { font-size: 13px; letter-spacing: .04em; }
+}
+@media screen and (max-width: 800px) {
+  .instrument-controls > select { max-width: 100%; }
+  .brand-title { white-space: nowrap; }
+}
+
+/* Persistent import guidance and recoverable feedback. */
+.import-guidance { font: 13px/1.6 var(--font-body); color: var(--color-text-muted); margin: 12px 0; }
+.import-feedback { margin: 16px; padding: 14px 16px; border: 1px solid var(--color-border); border-left: 3px solid var(--color-error); border-radius: 8px; background: var(--color-surface); overflow-wrap: anywhere; }
+.import-feedback:empty { display: none; }
+.import-feedback[data-state="loading"], .import-feedback[data-state="success"] { border-left-color: var(--color-primary); }
+.import-error[data-state="loading"] { color: var(--color-text-muted); }

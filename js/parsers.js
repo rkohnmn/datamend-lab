@@ -1,3 +1,4 @@
+import { assertInputSize, assertTableSize, assertHeaders, missingNumber, readDelimitedRecords } from './import-safety.js';
 /**
  * DataMend Lab — Multi-Format Data Import Engine (Part 6)
  * Pure ES2022+ zero-dependency parsers for:
@@ -49,6 +50,12 @@ export function detectDelimiter(text) {
  * RFC 4180 Compliant Delimited Text Parser with configurable overrides and malformed row preservation.
  */
 export function parseDelimitedText(rawText, options = {}) {
+  assertInputSize(rawText);
+  const result = parseDelimitedTextUnchecked(rawText, options);
+  for (const table of result.sheets || [result]) assertTableSize(table.rawRows.length, table.columnNames.length);
+  return result;
+}
+function parseDelimitedTextUnchecked(rawText, options = {}) {
   if (typeof rawText !== 'string') {
     throw new Error('Input to parseDelimitedText must be a string.');
   }
@@ -498,6 +505,12 @@ function decodeXmlEntities(str) {
  * hidden rows/sheets, formula inspection, and parsed rows.
  */
 export function parseXlsxWorkbook(uint8, options = {}) {
+  assertInputSize(uint8.byteLength);
+  const result = parseXlsxWorkbookUnchecked(uint8, options);
+  for (const table of result.sheets || [result]) assertTableSize(table.rawRows.length, table.columnNames.length);
+  return result;
+}
+function parseXlsxWorkbookUnchecked(uint8, options = {}) {
   const entries = extractZipEntries(uint8);
 
   // Security check: detect macro-enabled vbaProject.bin
@@ -741,6 +754,12 @@ export function parseXlsxWorkbook(uint8, options = {}) {
  * Parses JSON text (flat array of records, object with record path, DataSenseDataset interchange JSON, or NDJSON).
  */
 export function parseJsonContent(rawText, options = {}) {
+  assertInputSize(rawText);
+  const result = parseJsonContentUnchecked(rawText, options);
+  for (const table of result.sheets || [result]) assertTableSize(table.rawRows.length, table.columnNames.length);
+  return result;
+}
+function parseJsonContentUnchecked(rawText, options = {}) {
   const trimmed = rawText.trim();
   if (!trimmed) throw new Error('JSON input is empty.');
 

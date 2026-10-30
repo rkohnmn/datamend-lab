@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "verify": "python3 tests/verify-build.py"
+    "verify": "python3 tests/verify-build.py",
+    "test:browser": "python tests/browser/test_product.py"
   },
   "license": "MIT"
 }

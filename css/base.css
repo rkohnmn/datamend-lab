@@ -129,7 +129,7 @@ a:hover {
 
 @media (max-width: 1024px) {
   .bento-grid-3 {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .col-span-8, .col-span-7, .col-span-6, .col-span-5, .col-span-4, .col-span-3 {
     grid-column: span 12;

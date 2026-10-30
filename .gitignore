@@ -8,3 +8,7 @@ dist/
 coverage/
 __pycache__/
 *.pyc
+
+# Generated browser evidence
+artifacts/browser/
+__pycache__/

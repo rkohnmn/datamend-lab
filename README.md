@@ -99,3 +99,8 @@ All asset links in `index.html` use explicit relative paths (`./css/...`, `./js/
 
 MIT License. Designed and maintained as part of the **DataSense Studio** open-source statistical laboratory ecosystem.
 Copyright © 2026 [Robert Kohn (rkohnmn)](https://github.com/rkohnmn).
+
+
+## Product quality and browser checks
+
+See [PRODUCT_AUDIT.md](PRODUCT_AUDIT.md) for the responsive-interface changes, import contracts and limits, regression coverage, and remaining work. After installing the development requirements and Chromium, run `npm run test:browser` for actual browser validation.
