@@ -1,3 +1,4 @@
+import {initCompassTransfer} from './compass-transfer.js';
 import { assertInputSize } from './import-safety.js';
 let importGeneration = 0;
 /**
@@ -343,7 +344,7 @@ function openPreviewModal(dataset, operationType, params) {
 
       <div class="module-card">
         <div class="module-header"><div class="module-title">Sample Cell Changes (Before → After)</div></div>
-        <div class="data-table-wrapper" style="max-height:220px;">
+        <div class="data-table-wrapper" style="max-height:220px;" tabindex="0">
           <table class="data-table">
             <thead><tr><th>Row ID</th><th>Column</th><th>Before</th><th>After</th></tr></thead>
             <tbody>${changesRowsHtml}</tbody>
@@ -483,7 +484,7 @@ function renderDatasetTableHtml(dataset, maxRows = 50) {
         <button type="button" class="btn btn-sm" id="btn-table-next" ${APP_STATE.tablePage >= maxPage ? 'disabled' : ''}>Next →</button>
       </div>
     </div>
-    <div class="data-table-wrapper">
+    <div class="data-table-wrapper" tabindex="0">
       <table class="data-table" aria-label="Dataset observations table">
         <thead>
           <tr><th style="width:72px;">Row ID</th>${ths}</tr>
@@ -564,7 +565,7 @@ function renderHomeWorkspace(ds, profile, issues) {
                 ${pending.warnings.slice(0, 4).map(w => `<div>• [${escapeHtml(w.code)}] ${escapeHtml(w.message)}</div>`).join('')}
               </div>
             ` : ''}
-            <div class="data-table-wrapper" style="max-height:190px;">
+            <div class="data-table-wrapper" style="max-height:190px;" tabindex="0">
               <table class="data-table">
                 <thead><tr>${pending.columnNames.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr></thead>
                 <tbody>
@@ -604,7 +605,7 @@ function renderHomeWorkspace(ds, profile, issues) {
             </div>
 
             <p class="import-guidance">Local import · Up to 2 MB, 5,000 rows, 40 columns, and 100,000 cells. For larger datasets, choose a subset.</p>
-            <div class="dropzone" id="file-dropzone" tabindex="0" role="button" aria-label="Upload CSV, TSV, XLSX, JSON, or NDJSON dataset file" style="padding:14px;">
+            <div class="dropzone" id="file-dropzone" role="group" aria-label="Upload CSV, TSV, XLSX, JSON, or NDJSON dataset file" style="padding:14px;">
               <div style="font-weight:600; font-size:14px; margin-bottom:4px;">
                 Drop CSV, TSV, Excel (.xlsx), JSON, NDJSON, or DataSense JSON files here
               </div>
@@ -946,7 +947,7 @@ function renderCleaningStudioWorkspace(ds, profile, issues) {
 
         <div class="module-card">
           <div class="module-header"><div class="module-title">2. Operation Catalog</div></div>
-          <div class="module-body compact" style="max-height:390px; overflow-y:auto;">
+          <div class="module-body compact" style="max-height:390px; overflow-y:auto;" tabindex="0">
             ${Object.values(OPERATION_REGISTRY).map(op => `
               <div class="issue-item ${op.id === opType ? 'selected' : ''}" data-select-op="${op.id}" style="padding:6px 10px; margin-bottom:5px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -991,7 +992,7 @@ function renderCleaningStudioWorkspace(ds, profile, issues) {
 
         <details class="disclosure" open>
           <summary>Contextual Recommendations (${issues.filter(i => i.suggestedRemedy).length})</summary>
-          <div class="disclosure-body" style="max-height:210px; overflow-y:auto;">
+          <div class="disclosure-body" style="max-height:210px; overflow-y:auto;" tabindex="0">
             ${issues.filter(i => i.suggestedRemedy).length === 0
               ? `<p style="font-size:12px; color:var(--color-text-muted);">No open automated recommendations.</p>`
               : issues.filter(i => i.suggestedRemedy).map(iss => `
@@ -1496,7 +1497,7 @@ function renderRestructureWorkspace(ds) {
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
               <div class="form-group">
                 <label class="form-label">Left Dataset (Active)</label>
-                <input type="text" class="input" value="${escapeHtml(ds.title)} (${ds.rows.length} rows)" disabled>
+                <input type="text" class="input" aria-label="Source dataset" value="${escapeHtml(ds.title)} (${ds.rows.length} rows)" disabled>
               </div>
               <div class="form-group">
                 <label class="form-label" for="join-right-ds">Right Lookup Dataset</label>
@@ -1771,7 +1772,7 @@ function renderComparisonWorkspace(ds) {
                 <strong>Observational Unit Reshaped:</strong> Because a pivot, unpivot, join, or aggregation changed the observational unit (${comp.rowsBefore} → ${comp.rowsAfter} rows), cells represent composite/grouped tuples rather than 1-to-1 original cells.
               </div>
             ` : comp.cellDiffs.length === 0 ? `<p style="font-size:12px; color:var(--color-text-muted);">No cell-level modifications recorded yet.</p>` : `
-              <div class="data-table-wrapper" style="max-height:240px;">
+              <div class="data-table-wrapper" style="max-height:240px;" tabindex="0">
                 <table class="data-table">
                   <thead><tr><th>Row ID</th><th>Column</th><th>Original Value</th><th>Cleaned Value</th></tr></thead>
                   <tbody>
@@ -1856,8 +1857,8 @@ function renderExportWorkspace(ds, issues) {
         <details class="disclosure" open>
           <summary>
             <span><strong>Reproducible R Script</strong> (<code>tidyverse / dplyr / tidyr</code>)</span>
-            <button type="button" class="btn btn-sm" id="btn-exp-r">Download .R</button>
           </summary>
+            <button type="button" class="btn btn-sm" id="btn-exp-r">Download .R</button>
           <div class="disclosure-body">
             <textarea class="input mono" rows="7" readonly aria-label="Generated R script">${escapeHtml(rCode)}</textarea>
           </div>
@@ -1866,8 +1867,8 @@ function renderExportWorkspace(ds, issues) {
         <details class="disclosure" open>
           <summary>
             <span><strong>Reproducible Python Script</strong> (<code>pandas / numpy</code>)</span>
-            <button type="button" class="btn btn-sm" id="btn-exp-py">Download .py</button>
           </summary>
+            <button type="button" class="btn btn-sm" id="btn-exp-py">Download .py</button>
           <div class="disclosure-body">
             <textarea class="input mono" rows="7" readonly aria-label="Generated Python script">${escapeHtml(pyCode)}</textarea>
           </div>
@@ -3032,6 +3033,7 @@ export function initDataMendApp() {
   loadPresetDataset('preset_join_customers_right');
   loadPresetDataset('preset_join_orders_left');
   loadPresetDataset('preset_messy_customers', 'home');
+  initCompassTransfer({prepareImport:prepareCompassImport,exportDataset:exportCompassDataset});
 
   if (window.location.hash && window.location.hash.startsWith('#state=')) {
     const restored = decodeWorkspaceHashState(window.location.hash);
@@ -3044,6 +3046,29 @@ export function initDataMendApp() {
       renderApp();
     }
   }
+}
+
+
+// The bridge prepares a dataset without replacing active work until storage succeeds.
+export function prepareCompassImport(data) {
+  globalThis.DataSenseHandoff.validateDataset(data);
+  const dataset=buildDatasetFromParsed({title:data.name || 'Compass dataset',filename:'Compass transfer',format:'JSON',columnNames:data.headers,rawRows:data.rows.map(row=>data.headers.map(h=>row[h]))});
+  return {commit() {
+    APP_STATE.datasets.push(dataset);APP_STATE.activeDatasetId=dataset.id;
+    APP_STATE.selectedColId=dataset.columns[0]?.id || null;APP_STATE.activeView='inspector';
+    APP_STATE.pendingImportPreview=null;importGeneration++;renderApp();return dataset.id;
+  }};
+}
+export function exportCompassDataset(expectedId) {
+  const ds=getActiveDataset();
+  if (!ds || ds.id!==expectedId) throw new Error('Select the transferred dataset before returning it to Compass.');
+  const headers=ds.columns.map(c=>c.displayName);
+  // Raw cells contain the current approved transformations; do not silently apply
+  // the profiler's inferred numeric/date conversions during a transfer.
+  const rows=ds.rows.map(row=>Object.fromEntries(ds.columns.map(c=>[c.displayName,row.cells[c.id]?.raw ?? null])));
+  const dataset={id:ds.id,name:ds.title,headers,rows};
+  globalThis.DataSenseHandoff.validateDataset(dataset);
+  return {dataset,auditSummary:{operations:ds.history.map(h=>({operationType:h.operationType || h.type || 'approved transformation'}))}};
 }
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {

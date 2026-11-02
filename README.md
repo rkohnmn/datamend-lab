@@ -25,16 +25,18 @@ Data preparation is not blindly deleting missing values or stripping outliers. D
 
 ## 2. DataSense Compass × DataMend Lab Round-Trip Protocol
 
-DataMend Lab includes `datamend-compass-adapter.js` implementing the `datasense_compass_handoff_v1` protocol:
-1. When launched from [DataSense Compass](https://rkohnmn.github.io/datasense-studio/compass/) with `?compass_handoff=<id>&return_to=<url>`, DataMend Lab automatically receives the staged dataset from IndexedDB / localStorage.
-2. An active status banner is displayed with the staged row count and identified target variable.
-3. Once the analyst completes cleaning operations, clicking **"✓ Return Cleaned Dataset to DataSense Compass"** transfers the repaired dataset and audit log back to DataSense Compass with restored variable roles and green quality gates.
+The active integration uses `js/compass-transfer.js` and the module-level workspace API:
+1. Compass stages a validated dataset in same-origin IndexedDB and opens `?compass_handoff=<id>`.
+2. **Load transferred dataset** adds it to the workspace, preserving existing datasets. Apply and review cleaning operations normally.
+3. **Return cleaned dataset to Compass** returns the active transferred dataset and an operation summary. Compass reanalyses the result; cleaning does not guarantee a green readiness gate.
+
+Transfers expire after 24 hours. Missing, expired, consumed and storage-blocked transfers show a recovery message. Return destinations are restricted to same-origin Studio paths. CSV exchange remains available. The legacy root adapter is not loaded.
 
 ---
 
 ## 3. Eleven Integrated Application Workspaces
 
-1. **Home & Import (`1. Home & Import`)**: Drag-and-drop multi-file uploader (CSV, TSV, multi-sheet XLSX, JSON, NDJSON, DataSense JSON), manual data entry, parser override preview, and 8 synthetic scenario datasets.
+1. **Home & Import (`1. Home & Import`)**: Drag-and-drop single-file uploader (CSV, TSV, multi-sheet XLSX, JSON, NDJSON, DataSense JSON), manual data entry, parser override preview, and 8 synthetic scenario datasets.
 2. **Data Inspector (`2. Data Inspector`)**: Variable semantic type/role/unit configuration, two-pass descriptive statistics ($\bar{x}, s$, Hyndman-Fan Type 7 $Q_1, \tilde{x}, Q_3, IQR, MAD_\sigma$), missingness matrix, and relationship hypotheses.
 3. **Quality Audit (`3. Quality Audit`)**: 6-dimension transparent quality scorecard with explicit formulas plus explainable diagnostic findings across Simple, Standard, and Technical modes.
 4. **Cleaning Studio (`4. Cleaning Studio`)**: 3-panel workbench with deterministic command assistant, operation catalog, parameter forms, fuzzy near-duplicate scanner, and impact previews.
@@ -91,7 +93,7 @@ Detailed architectural and methodology specifications are documented across the 
 
 ## 6. GitHub Pages Deployment
 
-All asset links in `index.html` use explicit relative paths (`./css/...`, `./js/...`, `./datamend-compass-adapter.js`) so the application deploys cleanly under any repository subpath (`https://rkohnmn.github.io/datamend-lab/`) via `.github/workflows/ci.yml`.
+All asset links in `index.html` use explicit relative paths (`./css/...`, `./js/...`) so the application deploys cleanly under any repository subpath (`https://rkohnmn.github.io/datamend-lab/`) via `.github/workflows/ci.yml`.
 
 ---
 
@@ -104,3 +106,6 @@ Copyright © 2026 [Robert Kohn (rkohnmn)](https://github.com/rkohnmn).
 ## Product quality and browser checks
 
 See [PRODUCT_AUDIT.md](PRODUCT_AUDIT.md) for the responsive-interface changes, import contracts and limits, regression coverage, and remaining work. After installing the development requirements and Chromium, run `npm run test:browser` for actual browser validation.
+
+
+For the November 2 release safeguards, accessibility checks and current limitations, see [PRODUCT_AUDIT.md](PRODUCT_AUDIT.md).

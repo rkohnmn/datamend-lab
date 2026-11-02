@@ -3,11 +3,18 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
 jobs:
   product:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    env:
+      BROWSER: ${{ matrix.browser }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,7 +24,16 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install -r requirements-dev.txt
-      - run: python -m playwright install --with-deps chromium
+      - run: python -m playwright install --with-deps ${{ matrix.browser }}
+      - run: npm ci --ignore-scripts
       - run: npm test
       - run: npm run verify
       - run: npm run test:browser
+      - run: npm run test:a11y
+        if: matrix.browser == 'chromium'
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failure-${{ matrix.browser }}
+          path: artifacts/
+          retention-days: 7

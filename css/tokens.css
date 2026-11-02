@@ -1,9 +1,9 @@
 /* DataSense Studio / DataMend Lab — Canonical Design Tokens (DESIGN.md v1.0.0) */
 :root {
-  --color-primary: #0F6E56;
+  --color-primary: #0C604B;
   --color-primary-hover: #0B5643;
   --color-primary-soft: rgba(15, 110, 86, 0.12);
-  --color-secondary: #D9381E;
+  --color-secondary: #B52D18;
   --color-secondary-soft: rgba(217, 56, 30, 0.12);
   --color-surface: #FFFFFF;
   --color-surface-alt: #FAF8F4;
@@ -12,11 +12,11 @@
   --color-text-muted: #525866;
   --color-border: #D8D4C8;
   --color-border-strong: #B8B2A2;
-  --color-error: #C92A2A;
+  --color-error: #A61C1C;
   --color-error-soft: rgba(201, 42, 42, 0.12);
-  --color-warning: #B45309;
+  --color-warning: #92400E;
   --color-warning-soft: rgba(180, 83, 9, 0.14);
-  --color-success: #0F6E56;
+  --color-success: #0C604B;
   --color-success-soft: rgba(15, 110, 86, 0.12);
   --color-accent-highlight: #1D4ED8;
   --color-accent-soft: rgba(29, 78, 216, 0.12);

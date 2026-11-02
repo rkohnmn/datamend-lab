@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import '../js/handoff-protocol.js';
+const protocol=globalThis.DataSenseHandoff;
+const origin='https://rkohnmn.github.io';
+const record={protocol:'datasense_compass_handoff_v1',schemaVersion:'1.0.0',handoffId:'ds_handoff_test',sourceApp:'datasense-compass',targetApp:'datamend',state:'READY_FOR_TARGET',expiresAt:new Date(Date.now()+60000).toISOString(),returnUrl:origin+'/datasense-studio/compass/',dataset:{headers:['id','value'],rows:[{id:'001',value:null}]}};
+assert.equal(protocol.validateEnvelope(record,record.handoffId,'READY_FOR_TARGET',origin),record);
+for(const bad of [{...record,state:'RETURN_CONSUMED'},{...record,expiresAt:'2000-01-01'},{...record,returnUrl:'https://example.com/'},{...record,returnUrl:'javascript:alert(1)'},{...record,targetApp:'other'}]) assert.throws(()=>protocol.validateEnvelope(bad,record.handoffId,'READY_FOR_TARGET',origin));
+for(const bad of [{headers:['a','a'],rows:[{a:1}]},{headers:['a'],rows:[{a:{nested:1}}]},{headers:['a'],rows:[{a:1,b:2}]},{headers:['a'],rows:[[1]]},{headers:['a'],rows:[{a:Infinity}]}]) assert.throws(()=>protocol.validateDataset(bad));
+assert.throws(()=>protocol.validateEnvelope({...record,state:'RETURN_READY',cleanedDataset:{headers:['a'],rows:[]}},record.handoffId,'RETURN_READY',origin));
+console.log('Handoff protocol schemas, redirects, expiration, state and payload checks passed');

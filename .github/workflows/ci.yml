@@ -17,7 +17,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  browser-quality:
+    uses: ./.github/workflows/product-quality.yml
+    permissions:
+      contents: read
   test-and-verify:
+    needs: browser-quality
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -43,11 +48,14 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
 
+      - name: Stage public site
+        run: python3 scripts/prepare-pages.py
+
       - name: Upload Static Site Artifact
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "."
+          path: "_site"
 
       - name: Deploy to GitHub Pages
         if: github.ref == 'refs/heads/main'
