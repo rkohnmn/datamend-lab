@@ -24,12 +24,25 @@ import { computeNumericStats } from './profiler.js';
 import { RISK_LEVELS } from './diagnosis.js';
 import { OPERATION_REGISTRY, resolveColumn } from './transforms.js';
 
+function compoundCellKey(row, columns) {
+  return JSON.stringify(columns.map(column => {
+    const cell = row.cells[column.id];
+    return cell?.missingState === MISSING_STATES.PRESENT
+      ? ['value', String(cell.parsed ?? cell.raw)]
+      : ['missing', cell?.missingState ?? 'MISSING'];
+  }));
+}
+
 /**
  * 18.1 Wide-to-Long (Unpivot / Melt)
  */
 export function unpivotWideToLong(dataset, params) {
   const idCols = (params.idColumns || []).map(c => resolveColumn(dataset, c)).filter(Boolean);
   const valueCols = (params.valueColumns || []).map(c => resolveColumn(dataset, c)).filter(Boolean);
+  if (idCols.length !== (params.idColumns || []).length ||
+      valueCols.length !== (params.valueColumns || []).length) {
+    throw new Error('Unpivot references one or more missing columns; refusing partial projection.');
+  }
   if (valueCols.length === 0) {
     throw new Error('Wide-to-long unpivot requires at least one measurement (value) column.');
   }
@@ -113,6 +126,9 @@ export function unpivotWideToLong(dataset, params) {
  */
 export function pivotLongToWide(dataset, params) {
   const idCols = (params.idColumns || []).map(c => resolveColumn(dataset, c)).filter(Boolean);
+  if (idCols.length === 0 || idCols.length !== (params.idColumns || []).length) {
+    throw new Error('Pivot requires valid identifier columns; refusing to collapse unrelated rows.');
+  }
   const namesFromCol = resolveColumn(dataset, params.namesFromColumn);
   const valuesFromCol = resolveColumn(dataset, params.valuesFromColumn);
   if (!namesFromCol || !valuesFromCol) {
@@ -139,7 +155,7 @@ export function pivotLongToWide(dataset, params) {
   let collisionCount = 0;
 
   for (const row of dataset.rows) {
-    const idKey = idCols.map(c => String(row.cells[c.id]?.parsed ?? '§NULL')).join('||');
+    const idKey = compoundCellKey(row, idCols);
     if (!groupMap.has(idKey)) {
       groupMap.set(idKey, {
         idCells: Object.fromEntries(idCols.map(c => [c.id, structuredClone(row.cells[c.id])])),
@@ -410,7 +426,9 @@ export function promoteRowToHeader(dataset, params) {
  */
 export function groupAndAggregate(dataset, params) {
   const groupCols = (params.groupColumns || []).map(c => resolveColumn(dataset, c)).filter(Boolean);
-  if (groupCols.length === 0) throw new Error('At least one grouping variable is required.');
+  if (groupCols.length === 0 || groupCols.length !== (params.groupColumns || []).length) {
+    throw new Error('All grouping variables must exist; refusing partial aggregation.');
+  }
   const aggregations = params.aggregations || []; // [{ colId, fn: 'mean'|'sum'|'count'|'median'|'min'|'max'|'sd', weightColId }]
   if (aggregations.length === 0) throw new Error('At least one aggregation specification is required.');
 
@@ -431,7 +449,7 @@ export function groupAndAggregate(dataset, params) {
       }
     }
     if (hasMissingGrp && !includeMissingGroups) continue;
-    const key = keyParts.join('||');
+    const key = compoundCellKey(row, groupCols);
     if (!buckets.has(key)) {
       buckets.set(key, { keyParts, rows: [] });
     }
@@ -551,13 +569,13 @@ export function inspectJoinDiagnostics(leftDs, rightDs, keyPairs, options = {}) 
       }
       parts.push(String(cell.parsed ?? cell.raw).trim());
     }
-    return parts.join('||');
+    return JSON.stringify(parts);
   }
 
-  const leftCols = keyPairs.map(kp => resolveColumn(leftDs, kp.leftKey)).filter(Boolean);
-  const rightCols = keyPairs.map(kp => resolveColumn(rightDs, kp.rightKey)).filter(Boolean);
-  if (leftCols.length === 0 || leftCols.length !== rightCols.length) {
-    throw new Error('Invalid join key mapping.');
+  const leftCols = keyPairs.map(kp => resolveColumn(leftDs, kp.leftKey));
+  const rightCols = keyPairs.map(kp => resolveColumn(rightDs, kp.rightKey));
+  if (!keyPairs.length || leftCols.some(col => !col) || rightCols.some(col => !col)) {
+    throw new Error('Invalid join key mapping: every paired column must exist.');
   }
 
   for (const r of leftDs.rows) {
@@ -637,7 +655,7 @@ export function executeDatasetJoin(leftDs, rightDs, params) {
       }
       parts.push(String(cell.parsed ?? cell.raw).trim());
     }
-    return parts.join('||');
+    return JSON.stringify(parts);
   }
 
   // Build hash index on rightDs
