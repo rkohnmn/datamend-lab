@@ -152,6 +152,12 @@ export function replayCleaningRecipe(targetDataset, recipe, options = {}) {
 
   const checkpoint = cloneWorkingState(targetDataset);
   const checkpointHistory = structuredClone(targetDataset.history);
+  const checkpointMeta = {
+    validationRules: structuredClone(targetDataset.validationRules),
+    redoStack: structuredClone(targetDataset.redoStack),
+    revision: targetDataset.revision,
+    updatedAt: targetDataset.updatedAt
+  };
 
   try {
     if (options.useLearnedParameters && recipe.learnedParameters) {
@@ -187,6 +193,10 @@ export function replayCleaningRecipe(targetDataset, recipe, options = {}) {
     targetDataset.rows = checkpoint.rows;
     targetDataset.learnedParameters = checkpoint.learnedParameters;
     targetDataset.history = checkpointHistory;
+    targetDataset.validationRules = checkpointMeta.validationRules;
+    targetDataset.redoStack = checkpointMeta.redoStack;
+    targetDataset.revision = checkpointMeta.revision;
+    targetDataset.updatedAt = checkpointMeta.updatedAt;
     throw new Error(`Recipe replay aborted and rolled back cleanly: ${err.message}`);
   }
 }

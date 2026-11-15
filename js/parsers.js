@@ -81,6 +81,7 @@ function parseDelimitedTextUnchecked(rawText, options = {}) {
   let currentField = '';
   let currentRow = [];
   let inQuotes = false;
+  let quoteClosed = false;
   let rowStartLine = 1;
   let currentLine = 1;
 
@@ -95,20 +96,27 @@ function parseDelimitedTextUnchecked(rawText, options = {}) {
           i++;
         } else {
           inQuotes = false;
+          quoteClosed = true;
         }
       } else {
         if (ch === '\n') currentLine++;
         currentField += ch;
       }
     } else {
+      if (quoteClosed && ch !== delimiter && ch !== '\r' && ch !== '\n') {
+        throw new Error(`Unexpected character after a closing quote on line ${currentLine}.`);
+      }
       if (ch === quoteChar && currentField.length === 0) {
         inQuotes = true;
+        quoteClosed = false;
       } else if (ch === delimiter) {
         currentRow.push(currentField);
         currentField = '';
+        quoteClosed = false;
       } else if (ch === '\r' && nextCh === '\n') {
         currentRow.push(currentField);
         currentField = '';
+        quoteClosed = false;
         records.push({ line: rowStartLine, fields: currentRow });
         currentRow = [];
         i++;
@@ -117,6 +125,7 @@ function parseDelimitedTextUnchecked(rawText, options = {}) {
       } else if (ch === '\n' || ch === '\r') {
         currentRow.push(currentField);
         currentField = '';
+        quoteClosed = false;
         records.push({ line: rowStartLine, fields: currentRow });
         currentRow = [];
         currentLine++;
@@ -379,6 +388,17 @@ export function inflateRaw(compressedBytes, maxOutputBytes = MAX_SAFE_FILE_BYTES
 /**
  * Extracts entries from a ZIP archive (Uint8Array) in pure JS.
  */
+function zipCrc32(bytes) {
+  let crc = 0xFFFFFFFF;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let i = 0; i < 8; i++) {
+      crc = (crc >>> 1) ^ ((crc & 1) ? 0xEDB88320 : 0);
+    }
+  }
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
 export function extractZipEntries(uint8) {
   if (uint8.length < 22) throw new Error('Invalid ZIP archive: file too short.');
   const view = new DataView(uint8.buffer, uint8.byteOffset, uint8.byteLength);
@@ -407,12 +427,16 @@ export function extractZipEntries(uint8) {
       throw new Error('Corrupt Central Directory entry in ZIP archive.');
     }
     const compressionMethod = view.getUint16(ptr + 10, true);
+    const expectedCrc32 = view.getUint32(ptr + 16, true);
     const compressedSize = view.getUint32(ptr + 20, true);
     const uncompressedSize = view.getUint32(ptr + 24, true);
     const nameLen = view.getUint16(ptr + 28, true);
     const extraLen = view.getUint16(ptr + 30, true);
     const commentLen = view.getUint16(ptr + 32, true);
     const localHeaderOffset = view.getUint32(ptr + 42, true);
+    if (ptr + 46 + nameLen + extraLen + commentLen > uint8.length) {
+      throw new Error('Truncated ZIP central directory entry.');
+    }
 
     totalUncompressed += uncompressedSize;
     if (totalUncompressed > MAX_SAFE_FILE_BYTES) {
@@ -422,23 +446,35 @@ export function extractZipEntries(uint8) {
     const nameBytes = uint8.subarray(ptr + 46, ptr + 46 + nameLen);
     const filename = decoder.decode(nameBytes);
 
-    // Read local file header
-    if (view.getUint32(localHeaderOffset, true) !== 0x04034b50) {
+    // Validate the advertised ZIP sizes and CRC before accepting workbook data.
+    if (localHeaderOffset > uint8.length - 30 ||
+        view.getUint32(localHeaderOffset, true) !== 0x04034b50) {
       throw new Error(`Invalid local file header for ${filename}`);
+    }
+    if (view.getUint16(localHeaderOffset + 8, true) !== compressionMethod) {
+      throw new Error(`Conflicting ZIP compression methods for ${filename}`);
     }
     const localNameLen = view.getUint16(localHeaderOffset + 26, true);
     const localExtraLen = view.getUint16(localHeaderOffset + 28, true);
     const dataStart = localHeaderOffset + 30 + localNameLen + localExtraLen;
+    if (dataStart > uint8.length || compressedSize > uint8.length - dataStart) {
+      throw new Error(`Truncated ZIP entry ${filename}`);
+    }
+    const localName = decoder.decode(uint8.subarray(localHeaderOffset + 30, localHeaderOffset + 30 + localNameLen));
+    if (localName !== filename) throw new Error(`ZIP entry name mismatch for ${filename}`);
     const rawSlice = uint8.subarray(dataStart, dataStart + compressedSize);
 
     let contentBytes;
     if (compressionMethod === 0) {
       contentBytes = rawSlice;
     } else if (compressionMethod === 8) {
-      contentBytes = inflateRaw(rawSlice);
+      contentBytes = inflateRaw(rawSlice, uncompressedSize);
     } else {
       throw new Error(`Unsupported ZIP compression method ${compressionMethod} in ${filename}`);
     }
+    if (contentBytes.length !== uncompressedSize) throw new Error(`ZIP size mismatch for ${filename}`);
+    if (zipCrc32(contentBytes) !== expectedCrc32) throw new Error(`ZIP CRC mismatch for ${filename}`);
+    if (entries.has(filename)) throw new Error(`Duplicate ZIP entry ${filename}`);
 
     entries.set(filename, {
       filename,

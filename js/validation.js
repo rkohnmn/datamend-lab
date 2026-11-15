@@ -33,6 +33,15 @@ export const VALIDATION_RULE_TYPES = Object.freeze({
   CUSTOM_FORMULA: 'custom_formula'
 });
 
+function validationTupleKey(row, columns) {
+  return JSON.stringify(columns.map((column) => {
+    const cell = row.cells[column.id];
+    return cell?.missingState === MISSING_STATES.PRESENT
+      ? ['value', String(cell.parsed ?? cell.raw)]
+      : ['missing', cell?.missingState ?? 'MISSING'];
+  }));
+}
+
 /**
  * Evaluates a single validation rule against a dataset.
  */
@@ -46,8 +55,31 @@ export function evaluateValidationRule(dataset, rule, secondaryDatasets = {}) {
   const failureExamples = [];
 
   const col = rule.column ? resolveColumn(dataset, rule.column) : null;
+  const types = Object.values(VALIDATION_RULE_TYPES);
+  const columnless = [VALIDATION_RULE_TYPES.COMPOSITE_UNIQUENESS,
+    VALIDATION_RULE_TYPES.CROSS_FIELD, VALIDATION_RULE_TYPES.CUSTOM_FORMULA];
+  const compoundNames = rule.type === VALIDATION_RULE_TYPES.COMPOSITE_UNIQUENESS ? rule.columns : null;
+  const unresolvedReference = rule.type === VALIDATION_RULE_TYPES.REFERENTIAL_INTEGRITY &&
+    !Array.isArray(rule.referenceValues) &&
+    !(rule.referenceDatasetId && secondaryDatasets[rule.referenceDatasetId] &&
+      resolveColumn(secondaryDatasets[rule.referenceDatasetId], rule.referenceColumn));
+  const configurationError = !types.includes(rule.type)
+    ? `Unknown validation type: ${rule.type}`
+    : !columnless.includes(rule.type) && !col
+      ? `Missing target column for ${rule.type}: ${rule.column || '(not configured)'}`
+      : rule.type === VALIDATION_RULE_TYPES.COMPOSITE_UNIQUENESS &&
+        (!Array.isArray(compoundNames) || !compoundNames.length ||
+          compoundNames.some(name => !resolveColumn(dataset, name)))
+        ? 'Composite uniqueness references missing or unconfigured columns.'
+        : unresolvedReference ? 'Referential integrity reference dataset or column is unavailable.' : null;
 
-  if (rule.type === VALIDATION_RULE_TYPES.UNIQUENESS && col) {
+  if (configurationError) {
+    // An untestable quality gate must not be presented as PASS (even on an empty table).
+    tested = Math.max(1, totalRows);
+    failing = tested;
+    failingRowIds.push(...dataset.rows.map(row => row._rowId));
+    failureExamples.push(configurationError);
+  } else if (rule.type === VALIDATION_RULE_TYPES.UNIQUENESS && col) {
     const counts = new Map();
     for (const row of dataset.rows) {
       const c = row.cells[col.id];
@@ -75,12 +107,12 @@ export function evaluateValidationRule(dataset, rule, secondaryDatasets = {}) {
     const cols = (rule.columns || []).map(c => resolveColumn(dataset, c)).filter(Boolean);
     const counts = new Map();
     for (const row of dataset.rows) {
-      const k = cols.map(c => String(row.cells[c.id]?.parsed ?? '§NULL')).join('||');
+      const k = validationTupleKey(row, cols);
       counts.set(k, (counts.get(k) || 0) + 1);
     }
     for (const row of dataset.rows) {
       tested++;
-      const k = cols.map(c => String(row.cells[c.id]?.parsed ?? '§NULL')).join('||');
+      const k = validationTupleKey(row, cols);
       if ((counts.get(k) || 0) > 1) {
         failing++;
         failingRowIds.push(row._rowId);
@@ -228,7 +260,7 @@ export function evaluateValidationRule(dataset, rule, secondaryDatasets = {}) {
         const s = String(val);
         ok = (!rule.minDate || s >= rule.minDate) && (!rule.maxDate || s <= rule.maxDate);
       } else if (rule.type === VALIDATION_RULE_TYPES.REFERENTIAL_INTEGRITY) {
-        ok = refSet ? refSet.has(String(val)) : true;
+        ok = refSet ? refSet.has(String(val)) : false;
       }
 
       if (ok) passing++;
